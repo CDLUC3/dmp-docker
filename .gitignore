@@ -1,0 +1,10 @@
+# Skip any log files
+*.log
+
+# Skip all credential files
+*.key
+*.yml.enc
+.env
+
+# Skip the cloned repositories
+**/src

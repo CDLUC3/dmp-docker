@@ -1,0 +1,112 @@
+version: '3.9'
+
+networks:
+  dmp_net:
+
+volumes:
+  hub_db:
+  tool_db:
+  hub_bundle:
+  tool_bundle:
+
+services:
+  # Email handler that captures all outbound email traffic
+  mailcatcher:
+    image: zolweb/docker-mailcatcher:latest
+    ports:
+      - "1025:1025"
+      - "1080:1080"
+    networks:
+      dmp_net:
+
+  # The DMPTool DB
+  tool_db:
+    image: mysql:5.7
+    ports:
+      - "3306:3306"
+    networks:
+      dmp_net:
+    restart: always
+    volumes:
+      - ./backups/:/tmp/backups/
+      - tool_db:/var/lib/mysql
+    env_file:
+      - ./services/tool/.env
+
+  # The DMPHub DB
+  hub_db:
+    image: mysql:5.7
+    ports:
+      - "3307:3306"
+    networks:
+      dmp_net:
+    restart: always
+    volumes:
+      - ./backups/:/tmp/backups/
+      - hub_db:/var/lib/mysql
+    env_file:
+      - ./services/hub/.env
+
+  # The DMPTool application
+  tool:
+    depends_on:
+      - tool_db
+    build:
+      context: ./services/tool
+      dockerfile: Dockerfile
+    env_file:
+      - ./services/tool/.env
+    # Use the mailcatcher instead of sending out emails
+    environment:
+      DEV_MAIL_HOST: mailcatcher
+      NODE_ENV: development
+      RAILS_ENV: development
+      RAILS_SERVE_STATIC_FILES: 1
+      WICKED_PDF_PATH: /bundle/bin/wkhtmltopdf
+    # Start the Puma server
+    command: /usr/src/app/scripts/start.sh
+    volumes:
+      # Map directories from the cloned DMPTool repo (located at ../services/tool relative to this dir)
+      - ./services/tool/src:/usr/src/app:consistent
+      # Make the startup scripts for this application available to the container
+      - ./services/tool/scripts:/usr/src/app/scripts:cached
+      - ./backups/:/tmp/backups/:cached
+      # Preserve the bundle to speed up builds
+      - tool_bundle:/bundle
+    networks:
+      dmp_net:
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+
+  # The DMPHub application
+  hub:
+    depends_on:
+      - hub_db
+    build:
+      context: ./services/hub
+      dockerfile: Dockerfile
+    env_file:
+      - ./services/hub/.env
+    environment:
+      DEV_MAIL_HOST: mailcatcher
+      NODE_ENV: development
+      RAILS_ENV: docker
+      RAILS_SERVE_STATIC_FILES: 1
+    # Start the Puma server
+    command: /usr/src/app/scripts/start.sh
+    volumes:
+      # Map directories from the cloned DMPHub repo (located at ../services/hub relative to this dir)
+      - ./services/hub/src:/usr/src/app:consistent
+      # Make the startup scripts for this application available to the container
+      - ./services/hub/scripts:/usr/src/app/scripts:cached
+      - ./backups/:/tmp/backups/:cached
+      # Preserve the bundle to speed up builds
+      - hub_bundle:/bundle
+    networks:
+      dmp_net:
+    ports:
+      - "3001:3000"
+    stdin_open: true
+    tty: true
