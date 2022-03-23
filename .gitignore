@@ -8,3 +8,6 @@
 
 # Skip the cloned repositories
 **/src
+
+# Skip any backup DB files
+backups/*.sql

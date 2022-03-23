@@ -10,9 +10,12 @@ set -e
 # Update the bundle if it's out of date
 bundle check || bundle update
 
+# Install all JS dependencies
+yarn install
+
 # Compile the assets
 # bundle exec rails assets:precompile
 
 # Startup the application
 touch log/development.log
-bundle exec rails s -d
+bundle exec puma -C config/puma.rb -p 3001

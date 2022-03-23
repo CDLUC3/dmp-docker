@@ -10,6 +10,9 @@ set -e
 # Update the bundle if it's out of date
 bundle check || bundle update
 
+# Install all JS dependencies
+yarn install
+
 # Compile the assets
 # bundle exec rails assets:precompile
 

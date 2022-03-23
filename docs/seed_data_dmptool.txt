@@ -1,0 +1,54 @@
+# INSTRUCTIONS FOR BUILDING A SAMPLE DB FROM A LIVE DATABASE:
+# -----------------------------------------------------------
+# REPLACE ALL INSTANCES OF '[EMAIL_ADDRESS_LIST]' WITH THE USER EMAILS YOU WANT TO EXTRACT
+# (THIS WILL INCLUDE ALL OF THEIR PLANS).
+# FOR EXAMPLE: "('john.doe@example.org', doe.john@gmail.com')"
+
+# NEXT REPLACE ALL INSTANCES OF '[HOST]' and '[USERNAME]' WITH THE APPROPRIATE VALUES
+
+# THEN CREATE A DIRECTORY TO STORE THE OUTPUT:
+mkdir ~/seed_tool
+
+# YOU MUST RUN EACH SCRIPT BELOW INDIVIDUALLY AND PASTE IN THE PASSWORD WHEN PROMPTED
+
+# CORE TABLES
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --tables departments identifier_schemes languages licenses metadata_standards orgs perms question_formats regions research_domains schema_migrations themes token_permission_types > ~/seed_tool/core_tables.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --tables repositories --where "homepage LIKE '%.edu%' OR homepage LIKE '%.gov%' OR homepage LIKE '%.org%' OR homepage LIKE '%.br%'" > ~/seed_tool/repositories.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --tables registry_orgs --where "country LIKE '%\"US\"%' OR country LIKE '%\"BR\"%' OR org_id IS NOT NULL" > ~/seed_tool/registry_orgs.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --tables oauth_applications --where "name in ('dmptool', 'dmphub')" > ~/seed_tool/oauth.sql
+# USER TABLES
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --tables users --where "email IN [EMAIL_ADDRESS_LIST]" > ~/seed_tool/users.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables prefs external_api_access_tokens users_perms --where "user_id IN (SELECT users.id FROM users WHERE email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/users_assoc.sql
+# GUIDANCE TABLES
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --tables guidance_groups guidances themes_in_guidance > ~/seed_tool/guidance.sql
+# TEMPLATE TABLES
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --tables templates phases sections questions question_format_labels question_options questions_themes annotations conditions > ~/seed_tool/templates.sql
+# PLAN TABLES
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables plans --where "id IN (SELECT plans.id FROM plans INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON users.id = roles.user_id WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/plans.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables contributors exported_plans plans_guidance_groups research_outputs subscriptions --where "plan_id IN (SELECT plans.id FROM plans INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON users.id = roles.user_id WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/plans_assoc.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables related_identifiers --where "identifiable_type = 'Plan' AND identifiable_id IN (SELECT plans.id FROM plans INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON users.id = roles.user_id WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/related_ids.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables metadata_standards_research_outputs repositories_research_outputs --where "research_output_id IN (SELECT research_outputs.id FROM research_outputs INNER JOIN plans ON research_outputs.plan_id = plans.id INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON roles.user_id = users.id WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/research_outputs_assoc.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables answers --where "question_id IN (SELECT questions.id FROM questions INNER JOIN sections ON questions.section_id = sections.id INNER JOIN phases ON sections.phase_id = phases.id INNER JOIN templates ON phases.template_id = templates.id INNER JOIN orgs ON templates.org_id = orgs.id WHERE managed = 1)" --where "plan_id IN (SELECT id FROM plans INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON roles.user_id = users.id WHERE users.email IN [EMAIL_ADDRESS_LIST])" --where "user_id IN (SELECT users.id FROM users WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/answers.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables answers_question_options --where "answer_id IN (SELECT answers.id FROM answers INNER JOIN plans ON plans.id = answers.plan_id INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON users.id = roles.user_id WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/answer_options.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables notes --where "answer_id IN (SELECT answers.id FROM answers INNER JOIN plans ON plans.id = answers.plan_id INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON users.id = roles.user_id WHERE users.email IN [EMAIL_ADDRESS_LIST]) AND user_id IN (SELECT users.id FROM users WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/notes.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables settings --where "target_id IN (SELECT exported_plans.id FROM exported_plans INNER JOIN plans ON exported_plans.plan_id = plans.id INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON roles.user_id = users.id AND users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/settings.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables plans_guidance_groups --where "plan_id IN (SELECT plans.id FROM plans INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON roles.user_id = users.id WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/plans_guidance.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables roles --where "plan_id IN (SELECT plans.id FROM plans INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON roles.user_id = users.id WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/roles.sql
+# IDENTIFIER TABLES
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables identifiers --where "identifiable_type = 'Contributor' AND identifiable_id IN (SELECT contributors.id FROM contributors INNER JOIN plans ON contributors.plan_id = plans.id INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON roles.user_id = users.id WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/contributor_ids.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables identifiers --where "identifiable_type = 'Org' AND identifiable_id IN (SELECT orgs.id FROM orgs)" > ~/seed_tool/org_ids.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables identifiers --where "identifiable_type = 'Plan' AND identifiable_id IN (SELECT plans.id FROM plans INNER JOIN roles ON plans.id = roles.plan_id INNER JOIN users ON users.id = roles.user_id WHERE users.email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/plan_ids.sql
+mysqldump dmp -h[HOST] -u[USERNAME] -p --no-create-db --no-tablespaces --lock-tables=false --tables identifiers --where "identifiable_type = 'User' AND identifiable_id IN (SELECT users.id FROM users WHERE email IN [EMAIL_ADDRESS_LIST])" > ~/seed_tool/user_ids.sql
+
+# THEN MERGE ALL SQL DUMPS INTO ONE FILE
+cat ~/seed_tool/*.sql > ~/full_seed.sql
+
+# DELETE THE SQL DUMP FILES
+rm -Rf ~/seed_tool
+
+# COPY THE full_seed.sql to the ./backups directory of this project and then seed the database
+cp /path/to/full_seed.sql ./backups/tool_seed.sql
+
+dce_tool
+
+./scripts/init_db.sh
