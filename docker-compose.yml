@@ -67,7 +67,7 @@ services:
     command: /usr/src/app/scripts/start.sh
     volumes:
       # Map directories from the cloned DMPTool repo (located at ../services/tool relative to this dir)
-      - ./services/tool/src:/usr/src/app:consistent
+      - ./services/tool/dmptool:/usr/src/app:consistent
       # Make the startup scripts for this application available to the container
       - ./services/tool/scripts:/usr/src/app/scripts:cached
       - ./backups/:/tmp/backups/:cached
@@ -98,7 +98,7 @@ services:
     command: /usr/src/app/scripts/start.sh
     volumes:
       # Map directories from the cloned DMPHub repo (located at ../services/hub relative to this dir)
-      - ./services/hub/src:/usr/src/app:consistent
+      - ./services/hub/dmphub:/usr/src/app:consistent
       # Make the startup scripts for this application available to the container
       - ./services/hub/scripts:/usr/src/app/scripts:cached
       - ./backups/:/tmp/backups/:cached

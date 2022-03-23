@@ -12,9 +12,10 @@ alias dce_tool='docker-compose exec tool /bin/bash'
 alias dcr_hub='docker-compose run hub /bin/bash'
 alias dce_hub='docker-compose exec hub /bin/bash'
 ```
-### Clone the repositories
-Clone the DMPTool repository: `cd ./services/tool && git clone git@github.com:CDLUC3/dmptool.git src`
-Clone the DMPHub repository: `cd ./services/hub && git clone git@github.com:CDLUC3/dmphub.git src`
+### Clone the repository and the submodules
+Clone this repository: `git clone `
+Initialize the submodules: `git submodule init`
+Pull down the latest code for each submodule: `git submodule update`
 
 ### Build the containers
 
@@ -70,6 +71,10 @@ Once complete, the hub_master.key and hub_credentials.yml.enc files will be plac
 To startup both services run `dc up`
 To startup just the DMPTool run `dce_tool`
 To startup just the DMPHub run `dce_hub`
+
+## Submodules
+
+Both the DMPTool and DMPHub code are handled as [Git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) here. You can interact with them as if they were normally cloned git repositories (e.g. switching branches, pulling changes, and editing, adding or deleting files)
 
 ## Helpful Docker commands
 

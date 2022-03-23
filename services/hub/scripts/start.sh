@@ -18,4 +18,4 @@ yarn install
 
 # Startup the application
 touch log/development.log
-bundle exec puma -C config/puma.rb -p 3001
+bin/rails server -u puma -p 3001 -e docker

@@ -34,7 +34,7 @@ RUN apt-get install -y nodejs
 RUN apt-get update && apt-get install -y yarn
 
 # Re-build from here if Gemfile or .lock change
-COPY ./src/Gemfile* ./
+COPY ./dmphub/Gemfile* ./
 RUN gem install bundler
 
 #RUN bundle config set without 'Postgres thin and rollbar'

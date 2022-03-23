@@ -1,0 +1,8 @@
+[submodule "services/hub/dmphub"]
+	path = services/hub/dmphub
+	url = git@github.com:CDLUC3/dmphub.git
+	branch = main
+[submodule "services/tool/dmptool"]
+	path = services/tool/dmptool
+	url = git@github.com:CDLUC3/dmptool.git
+	branch = main

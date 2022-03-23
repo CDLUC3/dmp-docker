@@ -40,7 +40,7 @@ RUN wget --quiet https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.
 # Re-build from here if Gemfile or .lock change
 RUN echo $(pwd)
 RUN echo $(ls -lah)
-COPY ./src/Gemfile* ./
+COPY ./dmptool/Gemfile* ./
 RUN gem install bundler
 
 #RUN bundle config set without 'Postgres thin and rollbar'
